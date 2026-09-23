@@ -1,0 +1,25 @@
+{
+  "name": "Corte e Arte Laser e Bordados - Lembrete de Pagamento",
+  "short_name": "Corte e Arte",
+  "description": "Sistema de cobranças, clientes, produtos e financeiro da Corte e Arte Laser e Bordados.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#faf4fb",
+  "theme_color": "#250024",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
