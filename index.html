@@ -417,17 +417,45 @@ async function importLocalIfNeeded(){
 async function startCloud(){
   const {data:sessionData,error}=await supabaseClient.auth.getSession();if(error)throw error;
   currentUser=sessionData.session?.user||null;
-  if(currentUser){setAuthVisible(false);cloudReady=true;await importLocalIfNeeded();await loadCloud()}else{cloudReady=false;setCloudStatus('Faça login para sincronizar');setAuthVisible(true)}
-  supabaseClient.auth.onAuthStateChange(async(_event,session)=>{
+  if(currentUser){
+    setAuthVisible(false);
+    cloudReady=true;
+    try{await importLocalIfNeeded();await loadCloud()}catch(e){console.error(e);setCloudStatus('Erro ao carregar a nuvem');toast('Erro ao carregar a nuvem: '+(e.message||e))}
+  }else{
+    cloudReady=false;
+    setCloudStatus('Faça login para sincronizar');
+    setAuthVisible(true);
+  }
+  supabaseClient.auth.onAuthStateChange((_event,session)=>{
     currentUser=session?.user||null;
-    if(currentUser){setAuthVisible(false);cloudReady=true;try{await importLocalIfNeeded();await loadCloud()}catch(e){console.error(e);toast('Erro ao carregar a nuvem: '+(e.message||e))}}else{cloudReady=false;setAuthVisible(true);setCloudStatus('Faça login para sincronizar')}
+    if(currentUser){
+      setAuthVisible(false);
+      cloudReady=true;
+      // Não aguarde chamadas ao Supabase dentro do callback de autenticação.
+      setTimeout(async()=>{
+        try{await importLocalIfNeeded();await loadCloud()}
+        catch(e){console.error(e);setCloudStatus('Erro ao carregar a nuvem');toast('Erro ao carregar a nuvem: '+(e.message||e))}
+      },0);
+    }else{
+      cloudReady=false;
+      setAuthVisible(true);
+      setCloudStatus('Faça login para sincronizar');
+    }
   });
 }
 async function login(){
   const email=document.getElementById('authEmail').value.trim();const password=document.getElementById('authPassword').value;
+  if(!email||!password){setAuthMessage('Informe seu e-mail e senha.','error');return}
   setAuthMessage('Entrando...','ok');
-  const {error}=await supabaseClient.auth.signInWithPassword({email,password});
-  if(error)setAuthMessage('Não foi possível entrar: '+error.message,'error');
+  const {data:res,error}=await supabaseClient.auth.signInWithPassword({email,password});
+  if(error){setAuthMessage('Não foi possível entrar: '+error.message,'error');return}
+  currentUser=res.user||res.session?.user||null;
+  if(!currentUser){setAuthMessage('Não foi possível confirmar seu acesso. Tente novamente.','error');return}
+  setAuthVisible(false);
+  cloudReady=true;
+  setCloudStatus('Carregando seus dados...');
+  try{await importLocalIfNeeded();await loadCloud()}
+  catch(e){console.error(e);setCloudStatus('Erro ao carregar a nuvem');toast('Login realizado, mas houve erro ao carregar os dados: '+(e.message||e))}
 }
 async function register(){
   const email=document.getElementById('authEmail').value.trim();const password=document.getElementById('authPassword').value;
